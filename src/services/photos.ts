@@ -9,11 +9,12 @@ export const getAll = async () => {
     const imagesFolder = ref(storage, "images");
     const photoList = await listAll(imagesFolder);
 
-    for(let i in photoList.items) {
-        let photoUrl = await getDownloadURL(photoList.items[i]);
+    for (let i = 0; i < photoList.items.length; i++) {
+        const photoItem = photoList.items[i];
+        const photoUrl = await getDownloadURL(photoItem);
 
         list.push({
-            name: photoList.items[i].name,
+            name: photoItem.name,
             url: photoUrl
         });
     }
@@ -21,22 +22,36 @@ export const getAll = async () => {
     return list;
 }
 
-export const insert = async (file: File) => {
-    if(['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+export const insert = async (files: File[]) => {
+    let results: (Photo | Error)[] = [];
 
-        let randomName = createId();
-        let newFile = ref(storage, `images/${randomName}`);
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
 
-        let upload = await uploadBytes(newFile, file);
-        let photoUrl = await getDownloadURL(upload.ref);
+        if (['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+            const randomName = createId();
+            const newFileRef = ref(storage, `images/${randomName}`);
 
-        return { name: upload.ref.name, url: photoUrl } as Photo;
-    } else {
-        return new Error('Tipo de arquivo não permitido.');
+            try {
+                const uploadSnapshot = await uploadBytes(newFileRef, file);
+                const photoUrl = await getDownloadURL(uploadSnapshot.ref);
+                results.push({ name: uploadSnapshot.ref.name, url: photoUrl });
+            } catch (error) {
+                if (error instanceof Error) {
+                    results.push(new Error(`Erro ao enviar arquivo ${file.name}: ${error.message}`));
+                } else {
+                    results.push(new Error(`Erro ao enviar arquivo ${file.name}`));
+                }
+            }
+        } else {
+            results.push(new Error(`Tipo de arquivo não permitido: ${file.name}`));
+        }
     }
+
+    return results;
 }
 
 export const deletePhoto = async (name: string) => {
-    let photoRef = ref(storage, `images/${name}`);
+    const photoRef = ref(storage, `images/${name}`);
     await deleteObject(photoRef);
 }

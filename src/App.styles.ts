@@ -1,9 +1,11 @@
 import styled from "styled-components";
 
 export const Container = styled.div`
-    background-color: #27282F;
-    color: #FFF;
-    min-height: 100vh;
+background-color: #000000;
+background-size: cover;
+background-position: center;
+color: #FFF;
+min-height: 100vh;
 `;
 
 export const Area = styled.div`
@@ -35,13 +37,14 @@ export const PhotoList = styled.div`
 `;
 
 export const UploadForm = styled.form`
-    background-color: #3D3F43;
+    background-color: rgba(61, 61, 67, 0.8); /* Define uma cor de fundo com transparência */
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 30px;
+    backdrop-filter: blur(40px); /* Aplica um desfoque ao fundo */
 
     input[type=submit] {
-        background-color: #756DF4;
+        background: linear-gradient(to right, #0042ad, #000003);
         border: 0;
         color: #FFF;
         padding: 8px 16px;

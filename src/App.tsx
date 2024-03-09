@@ -9,7 +9,7 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
 
-  useEffect(()=>{
+  useEffect(() => {
     getPhotos();
   }, []);
 
@@ -22,24 +22,36 @@ const App = () => {
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
-    const file = formData.get('image') as File;
+    const fileInput = e.currentTarget.querySelector<HTMLInputElement>('input[type="file"]');
+    const fileList = fileInput?.files;
 
-    if(file && file.size > 0) {
+    if (fileList && fileList.length > 0) {
+      const filesArray = Array.from(fileList);
       setUploading(true);
-      let result = await Photos.insert(file);
-      setUploading(false);
+      const errors: Error[] = [];
 
-      if(result instanceof Error) {
-        alert(`${result.name} - ${result.message}`);
-      } else {
-        let newPhotoList = [...photos];
-        newPhotoList.push(result);
-        setPhotos(newPhotoList);
+      try {
+        const results = await Photos.insert(filesArray);
+
+        results.forEach(result => {
+          if (result instanceof Error) {
+            errors.push(result);
+          } else {
+            setPhotos(prevPhotos => [...prevPhotos, result]);
+          }
+        });
+
+        if (errors.length > 0) {
+          alert('Ocorreram erros durante o envio de algumas imagens. Por favor, tente novamente.');
+        }
+      } catch (error) {
+        console.error('Erro ao enviar imagens:', error);
+      } finally {
+        setUploading(false);
       }
     }
   }
-
+  
   const handleDeleteClick = async (name: string) => {
     await Photos.deletePhoto(name);
     getPhotos();
@@ -48,10 +60,13 @@ const App = () => {
   return (
     <C.Container>
       <C.Area>
-        <C.Header>Galeria de Fotos</C.Header>
+        <C.Header>
+          Galeria de Fotos administrador <br />
+          Tente por as imagens com a mesma proporção para ficar organizado.
+        </C.Header>
 
         <C.UploadForm method="POST" onSubmit={handleFormSubmit}>
-          <input type="file" name="image" />
+          <input type="file" name="image" multiple />
           <input type="submit" value="Enviar" />
           {uploading && "Enviando..."}
         </C.UploadForm>
@@ -65,7 +80,7 @@ const App = () => {
 
         {!loading && photos.length > 0 &&
           <C.PhotoList>
-            {photos.map((item, index)=>(
+            {photos.map((item, index) => (
               <PhotoItem
                 key={index}
                 url={item.url}
